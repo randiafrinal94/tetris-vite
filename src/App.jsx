@@ -256,7 +256,7 @@ function NextPreview({ type }) {
               <div
                 key={`${r}-${c}`}
                 className="w-4 h-4 m-[2px] rounded-sm"
-                style={{ background: cell ? TETROMINOES[type].color : "transparent", boxShadow: cell ? "inset 0 -2px 0 rgba(0,0,0,0.25)" : "none" }}
+                style={{ width: cell, height: cell, background: cell ? TETROMINOES[type].color : "transparent", boxShadow: cell ? "inset 0 -2px 0 rgba(0,0,0,0.25)" : "none" }}
               />
             ))
           )}
@@ -349,6 +349,14 @@ export default function Tetris() {
   const [gameOver, setGameOver] = useState(false);
 
   const dropSpeed = Math.max(120, INITIAL_DROP_MS - (level - 1) * SPEEDUP_PER_LEVEL);
+
+  // Responsive cell size for mobile/desktop
+  const [cell, setCell] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 22 : 26);
+  useEffect(() => {
+    function onResize() { setCell(window.innerWidth < 768 ? 22 : 26); }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const shape = useMemo(() => rotateShape(curr.type, curr.rot), [curr]);
 
@@ -597,7 +605,7 @@ export default function Tetris() {
 
   return (
     <div className="min-h-[600px] w-full flex items-start justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100">
-      <div className="grid grid-cols-[minmax(240px,1fr)_220px] gap-4 w-full max-w-5xl">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(240px,1fr)_260px] gap-4 w-full max-w-5xl">
         {/* Playfield */}
         <div className="flex flex-col items-center">
           <div className="w-full max-w-md">
@@ -613,7 +621,7 @@ export default function Tetris() {
             {/* Grid */}
             <div
               className="grid gap-[3px]"
-              style={{ gridTemplateColumns: `repeat(${COLS}, 26px)`, gridAutoRows: "26px" }}
+              style={{ gridTemplateColumns: `repeat(${COLS}, ${cell}px)`, gridAutoRows: `${cell}px` }}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -666,7 +674,7 @@ export default function Tetris() {
                         layout
                         key={`${r}-${c}`}
                         className="w-[26px] h-[26px] rounded-[6px] border border-slate-700"
-                        style={{ background: bg, boxShadow: active || cellColor ? "inset 0 -3px 0 rgba(0,0,0,0.25)" : "none" }}
+                        style={{ width: cell, height: cell, background: bg, boxShadow: active || cellColor ? "inset 0 -3px 0 rgba(0,0,0,0.25)" : "none" }}
                         initial={{ scale: 0.9, opacity: 0.6 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.08 }}
@@ -700,13 +708,13 @@ export default function Tetris() {
           </div>
 
           {/* Controls hint */}
-          <div className="mt-3 text-xs text-slate-300">
+          <div className="mt-3 hidden md:block text-xs text-slate-300">
             ⌨️ <b>Arrows</b> move • <b>↑/X</b> rotate • <b>Z</b> ccw • <b>Space</b> hard drop • <b>C</b> hold • <b>P</b> pause
           </div>
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-3">
+        <div className="space-y-3 md:sticky md:top-6">
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 bg-slate-800/70 rounded-2xl shadow-xl border border-white/10 backdrop-blur-xl">
               <div className="text-xs text-slate-400">Score</div>
