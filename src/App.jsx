@@ -268,6 +268,41 @@ function NextPreview({ type }) {
   );
 }
 
+// --- Mobile Controls (shown on small screens) ---
+function MobileControls({ onLeft, onRight, onDown, onRotate, onDrop, onHold, onPause }) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 md:hidden pointer-events-none">
+      <div className="mx-auto max-w-5xl px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+        <div className="flex justify-between gap-4">
+          {/* Left: joystick */}
+          <div className="pointer-events-auto select-none flex gap-3">
+            <button aria-label="Move Left" onClick={onLeft} className="w-14 h-14 rounded-full bg-slate-800/80 border border-white/15 shadow-xl backdrop-blur flex items-center justify-center active:scale-95">⬅️</button>
+            <button aria-label="Move Right" onClick={onRight} className="w-14 h-14 rounded-full bg-slate-800/80 border border-white/15 shadow-xl backdrop-blur flex items-center justify-center active:scale-95">➡️</button>
+            <button aria-label="Soft Drop" onClick={onDown} className="w-14 h-14 rounded-full bg-slate-800/80 border border-white/15 shadow-xl backdrop-blur flex items-center justify-center active:scale-95">⬇️</button>
+          </div>
+          {/* Right: actions */}
+          <div className="pointer-events-auto select-none grid grid-cols-2 gap-3">
+            <button aria-label="Rotate" onClick={onRotate} className="px-4 h-14 rounded-2xl bg-emerald-500 text-slate-900 font-semibold shadow-xl active:scale-95">Rotate</button>
+            <button aria-label="Hard Drop" onClick={onDrop} className="px-4 h-14 rounded-2xl bg-cyan-400 text-slate-900 font-semibold shadow-xl active:scale-95">Drop</button>
+            <button aria-label="Hold" onClick={onHold} className="px-4 h-14 rounded-2xl bg-slate-700 text-white font-semibold shadow-xl active:scale-95">Hold</button>
+            <button aria-label="Pause" onClick={onPause} className="px-4 h-14 rounded-2xl bg-slate-700 text-white font-semibold shadow-xl active:scale-95">Pause</button>
+          </div>
+        </div>
+      </div>
+      {/* Mobile on-screen controls */}
+      <MobileControls
+        onLeft={moveLeft}
+        onRight={moveRight}
+        onDown={softDrop}
+        onRotate={rotateCW}
+        onDrop={hardDrop}
+        onHold={holdSwap}
+        onPause={togglePause}
+      />
+    </div>
+  );
+}
+
 // Lightweight dev-time self tests (won't throw; logs to console)
 function runSelfTests() {
   try {
@@ -462,6 +497,41 @@ export default function Tetris() {
     window.addEventListener("keydown", onKey, { passive: false });
     return () => window.removeEventListener("keydown", onKey);
   }, [board, curr, shape, hardDrop, running, gameOver, canHold, holdType, nextType, spawn]);
+  // --- Button/Touch handlers for mobile UI ---
+  const moveLeft = () => {
+    const pos = { x: curr.pos.x - 1, y: curr.pos.y };
+    if (!gameOver && running && canPlace(board, shape, pos)) setCurr(p => ({ ...p, pos }));
+  };
+  const moveRight = () => {
+    const pos = { x: curr.pos.x + 1, y: curr.pos.y };
+    if (!gameOver && running && canPlace(board, shape, pos)) setCurr(p => ({ ...p, pos }));
+  };
+  const softDrop = () => {
+    const pos = { x: curr.pos.x, y: curr.pos.y + 1 };
+    if (!gameOver && running && canPlace(board, shape, pos)) setCurr(p => ({ ...p, pos }));
+  };
+  const rotateCW = () => {
+    const newRot = curr.rot + 1;
+    const newShape = rotateShape(curr.type, newRot);
+    for (const k of [0, -1, 1, -2, 2]) {
+      const testPos = { x: curr.pos.x + k, y: curr.pos.y };
+      if (canPlace(board, newShape, testPos)) { setCurr(p => ({ ...p, rot: newRot, pos: testPos })); break; }
+    }
+  };
+  const holdSwap = () => {
+    if (!canHold || gameOver || !running) return;
+    setCanHold(false);
+    if (holdType == null) {
+      setHoldType(curr.type);
+      spawn(nextType);
+      setNextType(getRandomType());
+    } else {
+      const swap = holdType;
+      setHoldType(curr.type);
+      spawn(swap);
+    }
+  };
+  const togglePause = () => setRunning(r => !r);
 
   const reset = () => {
     setBoard(emptyBoard());
